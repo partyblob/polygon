@@ -1,0 +1,19 @@
+{
+	"name": "polygon",
+	"version": "1.0.0",
+	"main": "index.js",
+	"bin": {
+		"polygon": "./index.js"
+	},
+	"author": "BlobTheKay",
+	"license": "GPLv3",
+	"type": "module",
+	"dependencies": {
+		"discord.js": "^14.26.4",
+		"jsonc-parser": "^3.3.1",
+		"llmagon": "^1.0.6"
+	},
+	"imports": {
+		"#polygon": "./index.js"
+	}
+}
