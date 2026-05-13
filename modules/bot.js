@@ -3,7 +3,7 @@ import { Client, GatewayIntentBits, Partials, ChannelType } from 'discord.js'
 import { Message } from 'llmagon'
 
 const bot = new Client({
-  intents: [GatewayIntentBits.DirectMessages, GatewayIntentBits.MessageContent],
+  intents: [GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
   partials: [Partials.Channel],
 })
 

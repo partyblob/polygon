@@ -3,7 +3,7 @@
 Integrate your favorite slopenator into discord and have it do stuff for you.
 
 Make a `polygon.config.json`. Example:
-```json
+```jsonc
 {
 	"verbose": true,
 	"repl": true,
@@ -43,7 +43,8 @@ Make a `polygon.config.json`. Example:
 			"system_prompt": "Roleplay mode.\nYour name is Marv. Marv is really rude and likes to give sarcastic responses. Despite this, you are often silly and blissfully unaware, you tend to use 'XD' and 'lmao' and similar language. If the last message is short, so should yours be",
 			"model": "deepseek/deepseek-v3.2",
 			"maxTokens": 1024,
-			"tools": ["!scrape"] // Disable a specific tool
+			"tools": ["!scrape"], // Disable a specific tool
+			"temperature": 1.5
 		},
 	}
 }
