@@ -50,7 +50,7 @@ export const toolDefinitions = {
 						type: { type: 'string', enum: ['insert_after', 'insert_before', 'replace', 'delete', 'append'] },
 						find: { type: 'string', exceptFor: 'append' },
 						new: { type: 'string', exceptFor: 'delete' },
-						byLine: { type: 'boolean', default: true, description: 'must find the entire line' },
+						byLine: { type: 'boolean', default: true, description: '`find` must match the entire line' },
 					}
 				}
 			}
@@ -111,7 +111,7 @@ const edit = async ({filename, edits, atomic = false, create = false}) => {
 			i = next+find.length
 		}
 		if(i2 == -1){
-			res.push('Fail: No find found')
+			res.push('Fail: No match found')
 			continue
 		}
 		if(type == 'replace') data2.push(data.slice(0, i2) + n), res.push(`Replace: -${find.length} +${n.length}`)
