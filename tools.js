@@ -74,7 +74,7 @@ const edit = async ({filename, edits, atomic = false, create = false}) => {
 	if(typeof edits == 'string')
 		try{ edits = JSON.parse(edits); res.push('Warning: `edits` was passed as a string containing JSON. This is deprecated, pass an actual array instead') }
 		catch(_){ return ['Edits must be a valid JSON array of edit objects'] }
-	log.info(`Editing ${filename} (${edits.length} edits${create?', +create':''}) %o`, edits)
+	log.info(`Editing ${filename} (${edits.length} edits${create?', +create':''})`)
 	const data2 = []
 	filename = path.resolve(defCwd, resolvePath(filename))
 	let data = await fs.readFile(filename).catch(e=>null)
@@ -135,7 +135,6 @@ const edit = async ({filename, edits, atomic = false, create = false}) => {
 	try{
 		await fs.writeFile(filename, data2.join(''))
 	}catch(e){ return ['Failed to write to file: '+(e?.message??e?.code??e)] }
-	log.info(res)
 	return res
 }
 

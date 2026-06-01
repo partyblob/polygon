@@ -70,7 +70,10 @@ bot.on('messageCreate', async (message) => {
 			}
 			const arr = v.match(/```(\w+(?=\n|$))?/g)
 			if(!mdPrefix){
-				if(arr && (arr.length&1)) v += '\n```' // unclosed code block, try to fix it
+				if(arr && (arr.length&1)){
+					v += '\n```' // unclosed code block, try to fix it
+					mdPrefix = arr[arr.length-1]
+				}
 			}else{
 				v = mdPrefix + v
 				if(arr){
@@ -89,21 +92,22 @@ bot.on('messageCreate', async (message) => {
 				str = ''; curType = type
 			}
 			str += chunk
-			let i = chunk.lastIndexOf('\n\n')
-			let r = ''
-			if(i > 1900 || (i < 0 && str.length > 1900)){
-				let j = 1
-				i = str.lastIndexOf('\n', 1900)
-				if(i < 0) i = str.lastIndexOf('.', 1900)
-				if(i < 0) i = str.lastIndexOf(' ', 1900)
-				if(i < 0) i = 1900, j = 0
-				r = str.slice(0, i); str = str.slice(i+j)
-			}else if(i >= 0 && lastSend + 1000 < Date.now()){
-				i = str.length - chunk.length + i
-				r = str.slice(0, i); str = str.slice(i+2)
-			}else return
-			lastSend = Date.now()
-			flush(r)
+			do{
+				let i = str.lastIndexOf('\n\n')
+				let r = ''
+				if(i > 1900 || (i < 0 && str.length > 1900)){
+					let j = 1
+					i = str.lastIndexOf('\n', 1900)
+					if(i < 0) i = str.lastIndexOf('.', 1900)
+					if(i < 0) i = str.lastIndexOf(' ', 1900)
+					if(i < 0) i = 1900, j = 0
+					r = str.slice(0, i); str = str.slice(i+j)
+				}else if(i >= 0 && lastSend + 1000 < Date.now()){
+					r = str.slice(0, i); str = str.slice(i+2)
+				}else return
+				lastSend = Date.now()
+				flush(r)
+			}while(str.length > 1900)
 		}).done
 		rateLimitDebounce = 1500
 		flush(str)
