@@ -72,14 +72,14 @@ bot.on('messageCreate', async (message) => {
 			if(!mdPrefix){
 				if(arr && (arr.length&1)){
 					v += '\n```' // unclosed code block, try to fix it
-					mdPrefix = arr[arr.length-1]
+					mdPrefix = arr[arr.length-1] + '\n'
 				}
 			}else{
 				v = mdPrefix + v
 				if(arr){
 					if(!(arr.length&1)){
 						v += '\n```'
-						mdPrefix = arr[arr.length-1]
+						mdPrefix = arr[arr.length-1] + '\n'
 					}else mdPrefix = ''
 				}else v += '\n```'
 			}
