@@ -7,23 +7,6 @@ import { config, toolDefinitions, tools, log, onConfig } from '#polygon'
 
 const resolvePath = path => path[0] == '~' ? os.homedir() + path.slice(1) : path
 
-const entities = {__proto__: null, amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", copy: 
-'©'}
-const scrape = ({url}) => {
-	if(/file:/iy.test(url)) return '[[File URLs disabled]]'
-	if(!/\w+:\/\//y.test(url)) url = 'https://' + url
-	log.info(`Scraping ${new URL(url).hostname}...`)
-	return fetch(url).then(a => {
-		if(/\s*application\s*\/\s*json/yi.test(a.headers.get('content-type')??'')) return a.json()
-		if(!/\s*text\s*\/\s*html/yi.test(a.headers.get('content-type')??'')) return a.text()
-		return a.text().then(a => {
-			return a.replace(/<a(?:"[^"]*"['"]*|'[^']*'['"]*|(?!href)[^'">])*href=(['"])((?:[^'"]|(?!\1)['"])*)\1(?:"[^"]*"['"]*|'[^']*'['"]*|[^'">])*>/g,'[Link: $2]').replace(/(?:<!DOCTYPE[^>]>|\s*<!\-\-(?:[^\-]|\-(?!\->))*\-\->\s*|\s*<(script|head|template|style|noscript|iframe|canvas|nav|footer|header|sidebar|svg)[^]*?<\s*\/\s*\1\s*>\s*|\s*<(?:"[^"]*"['"]*|'[^']*'['"]*|[^'">])+>\s*)+/gi, ' ').replace(/&#\d{1,10};|&#x[0-9a-fA-F]{1,8};|&\w{1,20};/g, a => a[1] == '#' ? String.fromCodePoint(a[2] == 'x' ? parseInt(a.slice(3,-1), 16) : +a.slice(2,-1)) : entities[a.slice(1,-1)] ?? '\ufffd')
-		})
-	}).catch(e => '[[Scrape failed]]')
-}
-
-import { toolDefinitions as emailToolDefinitions, tools as emailTools } from './tools/email.js'
-
 toolDefinitions.scrape = ResponseSchema('fetch', 'This tool scrapes a web page or API', {
 	type: 'object',
 	properties: { url: { type: 'string' } },
@@ -60,7 +43,22 @@ toolDefinitions.edit = ResponseSchema('edit', 'This tool edits/creates files lin
 	required: ['filename', 'create', 'edits']
 }, true)
 
-const execTool = ({command, timeout = 30, cwd = '.'}) => new Promise((res, rej) => {
+const entities = {__proto__: null, amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", copy: 
+'©'}
+tools.fetch = ({url}) => {
+	if(/file:/iy.test(url)) return '[[File URLs disabled]]'
+	if(!/\w+:\/\//y.test(url)) url = 'https://' + url
+	log.info(`Scraping ${new URL(url).hostname}...`)
+	return fetch(url).then(a => {
+		if(/\s*application\s*\/\s*json/yi.test(a.headers.get('content-type')??'')) return a.json()
+		if(!/\s*text\s*\/\s*html/yi.test(a.headers.get('content-type')??'')) return a.text()
+		return a.text().then(a => {
+			return a.replace(/<a(?:"[^"]*"['"]*|'[^']*'['"]*|(?!href)[^'">])*href=(['"])((?:[^'"]|(?!\1)['"])*)\1(?:"[^"]*"['"]*|'[^']*'['"]*|[^'">])*>/g,'[Link: $2]').replace(/(?:<!DOCTYPE[^>]>|\s*<!\-\-(?:[^\-]|\-(?!\->))*\-\->\s*|\s*<(script|head|template|style|noscript|iframe|canvas|nav|footer|header|sidebar|svg)[^]*?<\s*\/\s*\1\s*>\s*|\s*<(?:"[^"]*"['"]*|'[^']*'['"]*|[^'">])+>\s*)+/gi, ' ').replace(/&#\d{1,10};|&#x[0-9a-fA-F]{1,8};|&\w{1,20};/g, a => a[1] == '#' ? String.fromCodePoint(a[2] == 'x' ? parseInt(a.slice(3,-1), 16) : +a.slice(2,-1)) : entities[a.slice(1,-1)] ?? '\ufffd')
+		})
+	}).catch(e => '[[Scrape failed]]')
+}
+
+tools.exec = ({command, timeout = 30, cwd = '.'}) => new Promise((res, rej) => {
 	log.info(`Executing in ${cwd} command: ${command}`)
 	exec(command, { timeout: Math.max(1000, timeout*1000), windowsHide: true, cwd: path.resolve(defCwd, resolvePath(cwd)) }, (e, stdout, stderr) => {
 		res((e ? '[Exit code: '+e.code+']\n' : '') + (stderr + '\n' + stdout).trim())
@@ -71,7 +69,7 @@ onConfig.push(() => {
 	if(typeof config.tools?.cwd == 'string') defCwd = resolvePath(config.tools.cwd)
 })
 
-const edit = async ({filename, edits, atomic = false, create = false}) => {
+tools.edit = async ({filename, edits, atomic = false, create = false}) => {
 	const res = []
 	if(typeof edits == 'string')
 		try{ edits = JSON.parse(edits); res.push('Warning: `edits` was passed as a string containing JSON. This is deprecated, pass an actual array instead') }
@@ -139,5 +137,3 @@ const edit = async ({filename, edits, atomic = false, create = false}) => {
 	}catch(e){ return ['Failed to write to file: '+(e?.message??e?.code??e)] }
 	return res
 }
-
-export const tools = { __proto__: null, ...emailTools, fetch: scrape, exec: execTool, edit }

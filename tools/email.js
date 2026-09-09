@@ -1,8 +1,8 @@
 import { ResponseSchema } from "llmagon"
 import { SMTPClient, Message } from 'emailjs'
-import { config, toolDefinitions, tools, onConfig } from '#polygon'
+import { config, toolDefinitions, tools, onConfig, log } from '#polygon'
 
-let client = null
+let client = null, clientFrom = ''
 onConfig.push(() => {
 	const email = config.tools?.email
 	if(!email || typeof email != 'object'){ client = null; return }
@@ -13,20 +13,23 @@ onConfig.push(() => {
 		user: email.user,
 		password: email.password
 	})
+	clientFrom = email.from ?? (email.user.includes('@') ? email.user : '')
 })
-tools.sendEmail = async ({ from, to, subject, text, html }) => {
+tools.sendEmail = ({ from, to, subject, text, html }) => {
 	if(!client) return 'Email tool is not configured. Instruct user, if appropriate, to configure it via config.tools.email'
 	const msg = new Message()
-	msg.header.from = from ?? cfg.from
+	msg.header.from = from ?? clientFrom
 	msg.header.to = to
 	msg.header.subject = subject
 	if(html) msg.alternative = html
 	else msg.text = text
+	if(!msg.header.from) return 'Email tool is not configured with a default sender. Instruct user, if appropriate, to configure it via config.tools.email.from, or pass a `from` parameter to this tool'
 
-	const res = await client.sendAsync(await msg.readAsync(), msg.header.from, to.split(',').map(s => s.trim()))
-	log.info(`Email sent to ${to} with subject "${subject}"`)
-	log.verbose('Email server response:', res)
-	return res
+	return client.sendAsync(msg, msg.header.from, to.split(',').map(s => s.trim())).then(() => {
+		const info = `Email sent to ${to} with subject "${subject}"`
+		log.info(info)
+		return info
+	})
 }
 
 toolDefinitions.sendEmail = ResponseSchema('sendEmail', 'Send an email via SMTP (configured via config.tools.email)', {

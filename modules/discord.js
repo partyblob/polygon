@@ -128,12 +128,15 @@ bot.on('messageCreate', async (message) => {
 					}
 					continue
 				}
-				try{ tres.push(tool, tools[tool.name]?.(tool.param, message) ?? 'Unknown tool or error executing tool') }
-				catch(e){ log.error(e); tres.push(tool, 'Unknown tool or error executing tool') }
+				try{
+					const fn = tools[tool.name]
+					if(!fn) tres.push(tool, 'Unknown / unimplemented tool')
+					else tres.push(tool, fn(tool.param, message) ?? 'Tool returned no result')
+				}catch(e){ log.error(e); tres.push(tool, 'Error executing tool: '+e) }
 			}
 			for(let i = 0; i < tres.length; i += 2){
 				try{ ch.push(Message.Tool(JSON.stringify(await tres[i+1]), tres[i])) }
-				catch(e){ log.error(e); ch.push(Message.Tool(JSON.stringify('Unknown tool or error executing tool'), tres[i])) }
+				catch(e){ log.error(e); ch.push(Message.Tool(JSON.stringify('Error executing tool: '+e), tres[i])) }
 			}
 			if(ch.queued.length){
 				for(const u of ch.queued) ch.push(u)
@@ -163,8 +166,8 @@ const commands = [
 const rest = new REST().setToken(config.discord.token)
 
 rest.put(Routes.applicationCommands(bot.user.id), { body: commands }).then(() =>
-	log.success('Registered slash commands')
-).catch(e => log.error('Failed to register commands:', e))
+	log.info('Registered slash commands')
+).catch(e => log.error('Failed to register commands: '+e))
 
 bot.on('interactionCreate', int => {
 	if(!int.isChatInputCommand()) return

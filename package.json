@@ -15,6 +15,6 @@
 		"llmagon": "^1.0.7"
 	},
 	"imports": {
-		"#polygon": "./index.js"
+		"#polygon": "./defs.js"
 	}
 }
