@@ -17,7 +17,14 @@ Make a `polygon.config.json`. Example:
 		}
 	},
 	"tools": {
-		"cwd": "~/workspace"
+		"cwd": "~/workspace",
+		"email": {
+			"host": "my.mail.server",
+			// "port": 465, "ssl": true,
+			"user": "be-kind-to-my-clanker@my.mail.server",
+			"password": "dQw4w...",
+			"from": "My secretary <be-kind-to-my-clanker@my.mail.server>"
+		}
 	},
 	"models": {
 		"common": {
@@ -36,7 +43,7 @@ Make a `polygon.config.json`. Example:
 		"default": {
 			"include": "common",
 			"model": "qwen/qwen3.6-35b-a3b",
-			"tools": ["exec", "edit"] // Tools to execute shell commands or edit files on the host machine
+			"tools": ["exec", "edit", "email"] // Tools to execute shell commands or edit files on the host machine
 		},
 		"roleplay": {
 			"include": "common",
