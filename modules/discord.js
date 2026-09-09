@@ -1,5 +1,6 @@
 import { config, fatalError, log, tools, models } from '#polygon'
-import { Client, GatewayIntentBits, Partials, ChannelType } from 'discord.js'
+import { REST, Routes, SlashCommandBuilder } from 'discord.js'
+import { Client, GatewayIntentBits, Partials, ChannelType, MessageFlags } from 'discord.js'
 import { Message } from 'llmagon'
 
 const bot = new Client({
@@ -151,3 +152,30 @@ log.info('Starting discord client')
 await bot.login(config.discord.token)
 log.success(`Discord bot logged in as ${bot.user.tag}`)
 if(config.discord.presence) bot.user.setPresence(config.discord.presence)
+
+const commands = [
+	new SlashCommandBuilder()
+		.setName('clear')
+		.setDescription('Clear conversation history for this channel')
+		.toJSON()
+]
+
+const rest = new REST().setToken(config.discord.token)
+
+rest.put(Routes.applicationCommands(bot.user.id), { body: commands }).then(() =>
+	log.success('Registered slash commands')
+).catch(e => log.error('Failed to register commands:', e))
+
+bot.on('interactionCreate', int => {
+	if(!int.isChatInputCommand()) return
+	if(int.commandName === 'clear'){
+		const ch = channels.get(int.channel.id)
+		if(ch){
+			ch.length = 0
+			ch.queued.length = 0
+			int.reply('## [[ Conversation history cleared ]]')
+		}else{
+			int.reply({ content: 'No active conversation in this channel', flags: MessageFlags.Ephemeral })
+		}
+	}
+})

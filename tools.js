@@ -3,10 +3,9 @@ import { exec } from 'child_process'
 import fs from 'fs/promises'
 import os from 'os'
 import path from 'path'
-import { log } from './index.js'
+import { config, toolDefinitions, tools, log, onConfig } from '#polygon'
 
 const resolvePath = path => path[0] == '~' ? os.homedir() + path.slice(1) : path
-
 
 const entities = {__proto__: null, amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", copy: 
 '©'}
@@ -23,40 +22,43 @@ const scrape = ({url}) => {
 	}).catch(e => '[[Scrape failed]]')
 }
 
-export const toolDefinitions = {
-	__proto__: null,
-	scrape: ResponseSchema('fetch', 'This tool scrapes a web page or API', {
-		type: 'object',
-		properties: { url: { type: 'string' } },
-		required: ['url']
-	}, true),
-	exec: ResponseSchema('exec', 'This tool executes a shell command', {
-		type: 'object',
-		properties: { command: { type: 'string' }, timeout: { type: 'number', default: 30 }, cwd: { type: 'string', default: '.' } },
-		required: ['command']
-	}, true),
-	edit: ResponseSchema('edit', 'This tool edits/creates files line-wise', {
-		type: 'object',
-		requiredProperties: {
-			filename: { type: 'string' },
-			atomic: { type: 'boolean', default: false },
-			create: { type: 'boolean', default: false },
-			edits: {
-				type: 'array',
-				description: 'Order as found in file; appends come last. Pass an actual array, not a string containing a JSON array',
-				items: {
-					type: 'object',
-					requiredProperties: {
-						type: { type: 'string', enum: ['insert_after', 'insert_before', 'replace', 'delete', 'append'] },
-						find: { type: 'string', exceptFor: 'append' },
-						new: { type: 'string', exceptFor: 'delete' },
-						byLine: { type: 'boolean', default: true, description: '`find` must match the entire line' },
-					}
-				}
+import { toolDefinitions as emailToolDefinitions, tools as emailTools } from './tools/email.js'
+
+toolDefinitions.scrape = ResponseSchema('fetch', 'This tool scrapes a web page or API', {
+	type: 'object',
+	properties: { url: { type: 'string' } },
+	required: ['url']
+}, true)
+
+toolDefinitions.exec = ResponseSchema('exec', 'This tool executes a shell command', {
+	type: 'object',
+	properties: { command: { type: 'string' }, timeout: { type: ['number'], default: 30 }, cwd: { type: 'string', default: '.' } },
+	required: ['command', 'timeout', 'cwd']
+}, true)
+
+toolDefinitions.edit = ResponseSchema('edit', 'This tool edits/creates files line-wise', {
+	type: 'object',
+	properties: {
+		filename: { type: 'string' },
+		//atomic: { type: 'boolean', default: false },
+		create: { type: 'boolean', default: false },
+		edits: {
+			type: 'array',
+			description: 'Order as found in file; appends come last. Pass an actual array, not a string containing a JSON array',
+			items: {
+				type: 'object',
+				properties: {
+					type: { type: 'string', enum: ['insert_after', 'insert_before', 'replace', 'delete', 'append'] },
+					find: { type: 'string', exceptFor: 'append' },
+					new: { type: 'string', exceptFor: 'delete' },
+					byLine: { type: 'boolean', default: true, description: '`find` must match the entire line' },
+				},
+				required: ['type', 'find', 'new', 'byLine']
 			}
 		}
-	}, true)
-}
+	},
+	required: ['filename', 'create', 'edits']
+}, true)
 
 const execTool = ({command, timeout = 30, cwd = '.'}) => new Promise((res, rej) => {
 	log.info(`Executing in ${cwd} command: ${command}`)
@@ -65,9 +67,9 @@ const execTool = ({command, timeout = 30, cwd = '.'}) => new Promise((res, rej) 
 	})
 })
 let defCwd = process.cwd()
-export const configure = opts => {
-	if(typeof opts.cwd == 'string') defCwd = resolvePath(opts.cwd)
-}
+onConfig.push(() => {
+	if(typeof config.tools?.cwd == 'string') defCwd = resolvePath(config.tools.cwd)
+})
 
 const edit = async ({filename, edits, atomic = false, create = false}) => {
 	const res = []
@@ -138,4 +140,4 @@ const edit = async ({filename, edits, atomic = false, create = false}) => {
 	return res
 }
 
-export const tools = { __proto__: null, fetch: scrape, exec: execTool, edit }
+export const tools = { __proto__: null, ...emailTools, fetch: scrape, exec: execTool, edit }

@@ -2,7 +2,7 @@
 import fs from 'fs/promises'
 import { AIConfig, ResponseSchema, Message } from 'llmagon'
 import rl from 'readline'
-import { toolDefinitions, tools, configure } from './tools.js'
+import { toolDefinitions } from './tools.js'
 export * from './tools.js'
 import { parse } from 'jsonc-parser'
 
@@ -13,7 +13,7 @@ export const fatalError = err => {
 
 if(!process.argv[2]) fatalError('Usage: npx polygon path/to/.config.json')
 export const config = parse((await fs.readFile(process.argv[2])).toString())
-export const onShutdown = []
+export const onShutdown = [], onConfig = []
 
 if(typeof config !== 'object' || !config) fatalError('Invalid config file')
 export const log = {
@@ -29,6 +29,9 @@ export const log = {
 		: console.log(`\x1b[2K\r\x1b[32m%o\x1b[m`, message, ...a)
 	, rlInt?.prompt())
 }
+
+process.on('unhandledRejection', log.error)
+process.on('uncaughtError', log.error)
 
 let rlInt = null
 if(config.repl){
@@ -53,6 +56,12 @@ if(config.repl){
 		Promise.allSettled(onShutdown).then(() => { process.exit(0) })
 	}).prompt()
 }
+
+export const toolDefinitions = Object.create(null)
+export const tools = Object.create(null)
+
+import('./tools.js')
+import('./tools/email.js')
 
 export const models = new Map()
 
@@ -83,6 +92,7 @@ function resolveModel(key){
 		}
 	}
 	models.set(key, model)
+	return model
 }
 for(const key in config.models)
 	resolveModel(key)
@@ -114,8 +124,6 @@ for(const {0: k, 1: model} of models){
 }
 log.info('Loaded %d model(s)', models.size)
 
-if(config.tools && typeof config.tools == 'object') configure(config.tools)
+for(const fn of onConfig) try{ fn(config) }catch(e){ log.error(e) }
 
-process.on('unhandledRejection', log.error)
-process.on('uncaughtError', log.error)
-import('./modules/bot.js')
+import('./modules/discord.js')
