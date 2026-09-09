@@ -12,7 +12,7 @@
 		"discord.js": "^14.26.4",
 		"emailjs": "^5.0.3",
 		"jsonc-parser": "^3.3.1",
-		"llmagon": "^1.0.7"
+		"llmagon": "^1.0.8"
 	},
 	"imports": {
 		"#polygon": "./defs.js"

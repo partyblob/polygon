@@ -32,7 +32,7 @@ tools.sendEmail = ({ from, to, subject, text, html }) => {
 	})
 }
 
-toolDefinitions.sendEmail = ResponseSchema('sendEmail', 'Send an email via SMTP (configured via config.tools.email)', {
+toolDefinitions.sendEmail = ResponseSchema('sendEmail', 'Send an email', {
 	type: 'object',
 	properties: {
 		from: { type: ['string', 'null'], description: 'Sender email address (recommended null, auto)' },
