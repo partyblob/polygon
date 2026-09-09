@@ -41,9 +41,9 @@ fs.watch(process.argv[2], { persistent: false }, () => {
 	log.info('Config file changed, reloading...')
 	try{
 		loadConfig()
-		log.succcess('Config reloaded successfully')
+		log.success('Config reloaded successfully')
 	}catch(e){
-		log.error('Failed to reload config: %o', e)
+		log.error('Failed to reload config: ' + e)
 	}
 })
 
