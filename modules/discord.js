@@ -8,10 +8,6 @@ const bot = new Client({
   partials: [Partials.Channel],
 })
 
-const defaultModelId = config.discord.default_model ?? 'default'
-const defaultModel = models.get(config.discord.default_model ?? 'default')
-if(!defaultModel) fatalError(`Discord default_model '${config.discord.default_model}' not found`)
-
 const channels = new Map()
 class Channel extends Array{
 	queued = []
@@ -38,10 +34,22 @@ bot.on('messageCreate', async (message) => {
 		if(typeof modelId !== 'string') return
 		channels.set(message.channel.id, ch = new Channel(modelId))
 	}
-	const msg = Message.User(message.content, message.author.tag)
+	const msgs = [Message.User(message.content, message.author.tag)]
+	if(message.attachments.size){
+		const prs = []
+		for(const a of message.attachments.values())
+			if(a.contentType?.startsWith('image/')) prs.push(fetch(a.url).then(r => r.arrayBuffer()).then(b =>
+				Message.Image(b, message.author.tag, a.contentType)
+			))
+			else if(a.contentType?.startsWith('audio/')) prs.push(fetch(a.url).then(r => r.arrayBuffer()).then(b =>
+				Message.Audio(b, message.author.tag, a.contentType)
+			))
+		for(const img of prs) msgs.push(await img)
+	}
+	
 	if(ch.lastUsed === Infinity){
 		// Already busy. Queue message for next turn
-		ch.queued.push(msg)
+		ch.queued.push(...msgs)
 		return
 	}
 	let lastSend = Date.now()
@@ -52,7 +60,7 @@ bot.on('messageCreate', async (message) => {
 		ch.lastUsed = Date.now()
 		message.channel.send('Error:\n```\n' + (e?.stack??e?.message??e) + '\n```')
 	}
-	ch.push(msg)
+	ch.push(...msgs)
 	message.channel.sendTyping().catch(err)
 	const int = setInterval(() => {
 		message.channel.sendTyping().catch(err)
